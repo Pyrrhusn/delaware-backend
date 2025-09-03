@@ -1,7 +1,7 @@
 ### Delaware backend - Group project
 This is the backend project for a server-side B2B application designed to provide a robust and scalable RESTful API for managing business product stock, suppliers (businesses) and placing orders.
 
-#### Core Functionalities (not exhaustive)
+#### Core Functionalities (non-exhaustive)
 
 - Searching and filtering products
 - Adding products to cart
@@ -12,7 +12,7 @@ This is the backend project for a server-side B2B application designed to provid
 - Prisma ORM Integration
 - Organizes route handlers by resource for maintainability and scalability.
 
-#### Technologies Used (not exhaustive)
+#### Technologies Used (non-exhaustive)
 
 - **Node.js** – JavaScript runtime environment for executing server-side code.
 - **Koa** – Lightweight and expressive web server framework, used to manage HTTP requests and responses.
@@ -22,3 +22,4 @@ This is the backend project for a server-side B2B application designed to provid
 - **RESTful API** – Exposes structured endpoints for CRUD operations.
 - **Koa Middleware** – For parsing requests, handling errors, logging, authentication, and security.
 - **Joi** - schema description and validation
+
