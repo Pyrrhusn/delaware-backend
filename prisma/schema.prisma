@@ -1,0 +1,193 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model admin {
+  ID   Int  @id
+  user user @relation(fields: [ID], references: [ID], onDelete: Cascade, onUpdate: Cascade, map: "FK_ADMIN_ID")
+}
+
+model bedrijf {
+  ID                            Int                  @id @default(autoincrement())
+  ACCOUNTSINDS                  DateTime             @db.Date
+  ADRES                         String               @db.VarChar(255)
+  BETALINGSINFO                 Json                 @db.Json
+  BTWNUMMER                     String               @unique(map: "BTWNUMMER") @db.VarChar(255)
+  CONTACTGEGEVENS               Json                 @db.Json
+  ISACTIEFKLANT                 Boolean              @default(false)
+  ISACTIEFLEVERANCIER           Boolean              @default(false)
+  LOGOIMAGE                     String               @db.VarChar(255)
+  NAAM                          String               @unique(map: "NAAM") @db.VarChar(255)
+  SECTOR                        String               @db.VarChar(255)
+  ADMIN_ID                      Int?
+  user_bedrijf_ADMIN_IDTouser   user?                @relation("bedrijf_ADMIN_IDTouser", fields: [ADMIN_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "FK_BEDRIJF_ADMIN_ID")
+  bedrijfverandering            bedrijfverandering[]
+  user_user_BEDRIJF_IDTobedrijf user[]               @relation("user_BEDRIJF_IDTobedrijf")
+
+  @@index([ADMIN_ID], map: "FK_bedrijf_ADMIN_ID")
+}
+
+model bedrijfverandering {
+  ID                  Int    @id @default(autoincrement())
+  AANGEVRAAGDOP       DateTime  @db.DateTime(6)
+  ACCOUNTSINDS        DateTime  @db.Date
+  ADRES               String    @db.VarChar(255)
+  BETALINGSINFO       Json      @db.Json
+  CONTACTGEGEVENS     Json      @db.Json
+  ISACTIEFKLANT       Boolean   @default(false)
+  ISACTIEFLEVERANCIER Boolean   @default(false)
+  ISAFGEKEURD         Boolean   @default(false)
+  ISGOEDGEKEURD       Boolean   @default(false)
+  LOGOIMAGE           String    @db.VarChar(255)
+  SECTOR              String    @db.VarChar(255)
+  AANGEVRAAGDDOOR_ID  Int 
+  BEDRIJF_ID          Int 
+  user                user      @relation(fields: [AANGEVRAAGDDOOR_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "FK_bedrijfverandering_AANGEVRAAGDDOOR_ID")
+  bedrijf             bedrijf   @relation(fields: [BEDRIJF_ID], references: [ID], onDelete: Cascade, onUpdate: NoAction, map: "FK_BEDRIJFVERANDERING_BEDRIJF_ID")
+
+  @@index([AANGEVRAAGDDOOR_ID], map: "FK_bedrijfverandering_AANGEVRAAGDDOOR_ID")
+  @@index([BEDRIJF_ID], map: "FK_bedrijfverandering_BEDRIJF_ID")
+}
+
+enum betalingsStatusEnum {
+  BETAALD
+  NIETBETAALD
+}
+
+enum leveringStatusEnum {
+  VERZONDEN
+  GELEVERD
+  INBEHANDELING
+}
+
+model bestelling {
+  ID                                   Int                  @id @default(autoincrement())
+  BEDRAG                               Float 
+  BETAALDAG                            DateTime             @db.Date
+  BETALINGSSTATUS                      betalingsStatusEnum               
+  DATUMGEPLAATST                       DateTime             @db.Date
+  DATUMLAATSTEBETALINGSHERINNERING     DateTime?            @db.Date
+  HEEFTBETALINGSHERINNERING            Boolean              @default(false)
+  LEVERADRES                           String               @db.VarChar(255)
+  ORDERID                              String               @db.VarChar(255)
+  ORDERSTATUS                          leveringStatusEnum               
+  USER_ID                              Int?
+  KLANT_ID                             Int 
+  LEVERANCIER_ID                       Int 
+  user_bestelling_KLANT_IDTouser       user                 @relation("bestelling_KLANT_IDTouser", fields: [KLANT_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "FK_BESTELLING_KLANT_ID")
+  user_bestelling_LEVERANCIER_IDTouser user                 @relation("bestelling_LEVERANCIER_IDTouser", fields: [LEVERANCIER_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "FK_BESTELLING_LEVERANCIER_ID")
+  user_bestelling_USER_IDTouser        user?                @relation("bestelling_USER_IDTouser", fields: [USER_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "FK_BESTELLING_USER_ID")
+  bestelling_product                   bestelling_product[]
+  notificaties notificatie[] 
+
+  @@index([KLANT_ID], map: "FK_bestelling_KLANT_ID")
+  @@index([LEVERANCIER_ID], map: "FK_bestelling_LEVERANCIER_ID")
+  @@index([USER_ID], map: "FK_bestelling_USER_ID")
+  @@unique([LEVERANCIER_ID, ORDERID], name: "UniekeLeverancierOrderNaam")
+}
+
+model bestelling_product {
+  ID            BigInt      @id @default(autoincrement())
+  AANTAL        Int
+  price         Float
+  BESTELLING_ID Int
+  PRODUCT_ID    Int
+  bestelling    bestelling  @relation(fields: [BESTELLING_ID], references: [ID], onDelete: Cascade, onUpdate: NoAction, map: "FK_bestelling_product_BESTELLING_ID")
+  product       product?    @relation(fields: [PRODUCT_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "FK_bestelling_product_PRODUCT_ID")
+
+  @@index([BESTELLING_ID], map: "FK_bestelling_product_BESTELLING_ID")
+  @@index([PRODUCT_ID], map: "FK_bestelling_product_PRODUCT_ID")
+  @@unique([BESTELLING_ID, PRODUCT_ID], name: "bestellingProductUniek")
+}
+
+model klant {
+  ID   Int  @id
+  user user @relation(fields: [ID], references: [ID], onDelete: Cascade, onUpdate: Cascade, map: "FK_KLANT_ID")
+}
+
+model leverancier {
+  ID   Int  @id
+  user user @relation(fields: [ID], references: [ID], onDelete: Cascade, onUpdate: Cascade, map: "FK_LEVERANCIER_ID")
+}
+
+model leverancier_klant {
+  Leverancier_ID                              Int
+  klanten_ID                                  Int
+  user_leverancier_klant_Leverancier_IDTouser user @relation("leverancier_klant_Leverancier_IDTouser", fields: [Leverancier_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "FK_LEVERANCIER_KLANT_Leverancier_ID")
+  user_leverancier_klant_klanten_IDTouser     user @relation("leverancier_klant_klanten_IDTouser", fields: [klanten_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "FK_LEVERANCIER_KLANT_klanten_ID")
+
+  @@id([Leverancier_ID, klanten_ID])
+  @@index([klanten_ID], map: "FK_leverancier_klant_klanten_ID")
+}
+
+model product {
+  ID                 Int                  @id @default(autoincrement())
+  EENHEIDSPRIJS      Float 
+  FOTOURL            String               @db.VarChar(255)
+  INSTOCK            Int 
+  NAAM               String               @db.VarChar(255)
+  LEVERANCIER_ID     Int 
+  bestelling_product bestelling_product[]
+  user               user                 @relation(fields: [LEVERANCIER_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "FK_PRODUCT_LEVERANCIER_ID")
+
+  @@index([LEVERANCIER_ID], map: "FK_product_LEVERANCIER_ID")
+  @@unique([LEVERANCIER_ID, NAAM], name: "UniekeLeverancierEnProdNaam")
+}
+
+model user {
+  ID                                                       Int                  @id @default(autoincrement())
+  DTYPE                                                    String               @db.VarChar(31)
+  PASSWORD                                                 String               @db.VarChar(255)
+  USERNAME                                                 String               @unique @db.VarChar(255)
+  BEDRIJF_ID                                               Int?
+  admin                                                    admin?
+  bedrijf_bedrijf_ADMIN_IDTouser                           bedrijf[]            @relation("bedrijf_ADMIN_IDTouser")
+  bedrijfverandering                                       bedrijfverandering[]
+  bestelling_bestelling_KLANT_IDTouser                     bestelling[]         @relation("bestelling_KLANT_IDTouser")
+  bestelling_bestelling_LEVERANCIER_IDTouser               bestelling[]         @relation("bestelling_LEVERANCIER_IDTouser")
+  bestelling_bestelling_USER_IDTouser                      bestelling[]         @relation("bestelling_USER_IDTouser")
+  klant                                                    klant?
+  leverancier                                              leverancier?
+  leverancier_klant_leverancier_klant_Leverancier_IDTouser leverancier_klant[]  @relation("leverancier_klant_Leverancier_IDTouser")
+  leverancier_klant_leverancier_klant_klanten_IDTouser     leverancier_klant[]  @relation("leverancier_klant_klanten_IDTouser")
+  product                                                  product[]
+  bedrijf_user_BEDRIJF_IDTobedrijf                         bedrijf?             @relation("user_BEDRIJF_IDTobedrijf", fields: [BEDRIJF_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "FK_USER_BEDRIJF_ID")
+  notificaties notificatie[]
+  LAATSTE_LOGOUT                                           DateTime? 
+
+  @@index([BEDRIJF_ID], map: "FK_user_BEDRIJF_ID")
+}
+
+enum notificatieStatus {
+  GELEZEN
+  ONGELEZEN
+  NIEUW
+}
+
+enum notificatieType {
+  BETALINGSVERZOEK
+  BETALINGONTVANGEN
+  ORDERVERZENDBAAR
+}
+
+model notificatie {
+  ID  Int  @id @default(autoincrement())
+  ORDER_ID  Int
+  bestelling    bestelling  @relation(fields: [ORDER_ID], references: [ID], onDelete: Cascade, onUpdate: NoAction, map: "FK_NOTIFICATIE_BESTELLING_ID")
+  USER_ID    Int
+  user      user             @relation(fields: [USER_ID], references: [ID], onDelete: Cascade, onUpdate: NoAction, map: "FK_NOTIFICATIE_USER_ID")
+  TEXT String
+  TYPE notificatieType
+  STATUS notificatieStatus
+  DATUM DateTime
+}
+
+model lastCheckNotificatieTimestamp {
+  id             Int      @id @default(autoincrement())
+  lastCheckedAt DateTime @default(now())
+}
